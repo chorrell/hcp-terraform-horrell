@@ -14,7 +14,7 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
 ├── variable_sets.tf            # Variable sets, non-sensitive variables, attachments
 ├── workspace_variables.tf      # Non-sensitive workspace variables
 ├── variables.tf                # organization_email, alert_emails (values on the hcp-terraform workspace)
-├── imports.tf                  # One-time imports of the hand-made objects
+├── self.tf                     # This workspace's own settings via data "tfe_workspace"
 └── .github/workflows/
     ├── terraform.yml           # fmt, validate, tflint; aggregate `Terraform Validation` check
     ├── markdownlint.yml        # Stub calling chorrell/workflows
