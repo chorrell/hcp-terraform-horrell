@@ -81,7 +81,8 @@ resource "tfe_workspace" "this" {
   # Enable it only to decommission a workspace.
   allow_destroy_plan = false
 
-  # Only queue runs for changes, never for every push.
+  # Matches the live workspaces. On a new workspace, false holds VCS-triggered runs (including PR plans) until one run
+  # is queued by hand. It has no effect once a workspace has run.
   queue_all_runs = false
 
   vcs_repo {
