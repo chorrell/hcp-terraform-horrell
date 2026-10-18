@@ -1,6 +1,6 @@
 resource "tfe_organization" "horrell" {
   name  = "horrell"
-  email = "christopher@horrell.ca"
+  email = var.organization_email
 
   collaborator_auth_policy      = "password"
   cost_estimation_enabled       = true

@@ -13,6 +13,7 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
 ├── notifications.tf            # Email alerts on every auto-applying workspace
 ├── variable_sets.tf            # Variable sets, non-sensitive variables, attachments
 ├── workspace_variables.tf      # Non-sensitive workspace variables
+├── variables.tf                # organization_email, alert_emails (values on the hcp-terraform workspace)
 ├── imports.tf                  # One-time imports of the hand-made objects
 └── .github/workflows/
     ├── terraform.yml           # fmt, validate, tflint; aggregate `Terraform Validation` check
@@ -23,6 +24,7 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
 ## Rules
 
 - **Never manage a sensitive value here.** Don't add a `tfe_variable` with `sensitive = true` and a real value, because it would be stored in state. Sensitive variables are set by hand in the HCP UI and stay out of this config.
+- **No email addresses in the code.** Pass them through `variables.tf`, with values set as Terraform variables on the `hcp-terraform` workspace.
 - **Keep `prevent_destroy`** on the organization, projects, workspaces and variable sets. Workspaces hold state and VCS connections, and a destroy or replace would lose them.
   - `prevent_destroy` only covers resources still in config. A PR that removes a workspace from `local.workspaces` plans a plain destroy, so check every plan's "to destroy" count.
 - **Renaming a map key or resource needs a `moved` block**, or Terraform plans a destroy and create.

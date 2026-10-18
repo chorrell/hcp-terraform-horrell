@@ -4,7 +4,7 @@
 resource "tfe_variable" "horrell_ca_alert_emails" {
   workspace_id = tfe_workspace.this["horrell-ca"].id
   key          = "alert_emails"
-  value        = jsonencode(["chrishorrell@icloud.com"])
+  value        = jsonencode(var.alert_emails)
   category     = "terraform"
   hcl          = true
 }
