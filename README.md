@@ -21,7 +21,11 @@ The workspaces hold state for [cloudflare-horrell](https://github.com/chorrell/c
 
 ## Bootstrap (one time, in order)
 
-1. **Workspace.** In org `horrell`, create workspace `hcp-terraform` in the Default Project. Connect it to this repo, with working directory `terraform`, trigger prefix `terraform/`, and auto-apply **off**.
+1. **Workspace.** In org `horrell`, create workspace `hcp-terraform` in the Default Project. Connect it to this repo, with working directory `terraform`, trigger prefix `terraform/`, and auto-apply **off**. Then set these by hand, because `tfe_workspace_settings` doesn't manage them:
+   - Terraform version `~> 1.16.0`.
+   - **Allow destroy plans off** (Settings → Destruction and Deletion). It's on by default, and this workspace manages every other one.
+
+   If HCP's GitHub App is installed for selected repositories only, add this repo to the installation first, or HCP can't connect to it.
 2. **Token.** The Free plan has no custom teams, so the only team token is the `owners` team's, which is org admin. Create it (Organization settings → Teams → owners → Team API token). Add it to the workspace as the **sensitive environment variable** `TFE_TOKEN`. Don't use a personal user token.
 3. **Import.** Merge the import PR. Its speculative plan must read `49 to import, 0 to add, 0 to change, 0 to destroy`. Confirm the apply in the HCP UI.
 4. **Self-management.** In a follow-up PR, delete `imports.tf` and add `self.tf` with:
