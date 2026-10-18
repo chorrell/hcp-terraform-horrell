@@ -28,7 +28,7 @@ The workspaces hold state for [cloudflare-horrell](https://github.com/chorrell/c
 
    If HCP's GitHub App is installed for selected repositories only, add this repo to the installation first, or HCP can't connect to it.
 2. **Token.** The Free plan has no custom teams, so the only team token is the `owners` team's, which is org admin. Create it (Organization settings → Teams → owners → Team API token). Add it to the workspace as the **sensitive environment variable** `TFE_TOKEN`. Don't use a personal user token. Also add the **Terraform variables** `organization_email` (the org's admin email) and `alert_emails` (HCL list, for example `["you@example.com"]`).
-3. **Import.** Merge the import PR. Its speculative plan must read `49 to import, 0 to add, 0 to change, 0 to destroy`. Confirm the apply in the HCP UI.
+3. **Import.** Merge the import PR. Its speculative plan must read `49 to import, 0 to add, 1 to change, 0 to destroy`. The one change is `tfe_organization.horrell`'s `email` becoming sensitive, and the plan says the value is unchanged. Anything else changing means the config doesn't match the live settings. Confirm the apply in the HCP UI.
 4. **Self-management.** In a follow-up PR, delete `imports.tf` and add `self.tf` with:
    - `data "tfe_workspace"` for `hcp-terraform`
    - a `tfe_workspace_settings` that turns auto-apply on

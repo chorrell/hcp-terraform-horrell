@@ -1,6 +1,7 @@
 # Looked up by HCP username rather than email, so no address is in the code. Notifications go to the account's email.
 data "tfe_organization_membership" "owner" {
-  organization = tfe_organization.horrell.name
+  # A literal, not tfe_organization.horrell.name, so a pending org update doesn't defer this read to apply time.
+  organization = "horrell"
   username     = "chorrell2022"
 }
 
