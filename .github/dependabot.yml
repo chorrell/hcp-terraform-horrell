@@ -32,10 +32,10 @@ updates:
     cooldown:
       default-days: 7
 
-  # Updates terraform/.terraform.lock.hcl. A provider bump plans in the hcp-terraform workspace, which manages every
+  # Updates .terraform.lock.hcl. A provider bump plans in the hcp-terraform workspace, which manages every
   # other workspace, so read that plan before merging.
   - package-ecosystem: "terraform"
-    directory: "/terraform"
+    directory: "/"
     schedule:
       interval: "monthly"
     groups:

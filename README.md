@@ -10,18 +10,18 @@ The workspaces hold state for [cloudflare-horrell](https://github.com/chorrell/c
 
 | File | Manages |
 | --- | --- |
-| [`terraform/organization.tf`](terraform/organization.tf) | Org settings (commit statuses, speculative plan cancellation) and the `Horrell-ca` / `Horrell-info` projects |
-| [`terraform/workspaces.tf`](terraform/workspaces.tf) | The nine workspaces: VCS repo, working directory, trigger prefixes, Terraform version, destroy plans off. Auto-apply and remote state go through `tfe_workspace_settings` |
-| [`terraform/notifications.tf`](terraform/notifications.tf) | Email alerts (applying, pending approval, errored) on every auto-applying workspace |
-| [`terraform/variable_sets.tf`](terraform/variable_sets.tf) | The four variable sets, their non-sensitive variables, and their project and workspace attachments |
-| [`terraform/workspace_variables.tf`](terraform/workspace_variables.tf) | Non-sensitive workspace variables (`alert_emails` on `horrell-ca`) |
-| [`terraform/imports.tf`](terraform/imports.tf) | One-time `import` blocks for the objects created by hand. Delete it after the first apply |
+| [`organization.tf`](organization.tf) | Org settings (commit statuses, speculative plan cancellation) and the `Horrell-ca` / `Horrell-info` projects |
+| [`workspaces.tf`](workspaces.tf) | The nine workspaces: VCS repo, working directory, trigger prefixes, Terraform version, destroy plans off. Auto-apply and remote state go through `tfe_workspace_settings` |
+| [`notifications.tf`](notifications.tf) | Email alerts (applying, pending approval, errored) on every auto-applying workspace |
+| [`variable_sets.tf`](variable_sets.tf) | The four variable sets, their non-sensitive variables, and their project and workspace attachments |
+| [`workspace_variables.tf`](workspace_variables.tf) | Non-sensitive workspace variables (`alert_emails` on `horrell-ca`) |
+| [`imports.tf`](imports.tf) | One-time `import` blocks for the objects created by hand. Delete it after the first apply |
 
 **Not managed:** sensitive variable values (`CLOUDFLARE_API_TOKEN`, `cloudflare_api_token_info`, `DIGITALOCEAN_TOKEN`, `SPACES_*`, `TAILSCALE_OAUTH_CLIENT_ID`, `TFC_WORKLOAD_IDENTITY_AUDIENCE`). They're set by hand in the HCP UI, so they never end up in this repo or its state.
 
 ## Bootstrap (one time, in order)
 
-1. **Workspace.** In org `horrell`, create workspace `hcp-terraform` in the Default Project. Connect it to this repo, with working directory `terraform`, trigger prefix `terraform/`, and auto-apply **off**. Then set these by hand, because `tfe_workspace_settings` doesn't manage them:
+1. **Workspace.** In org `horrell`, create workspace `hcp-terraform` in the Default Project. Connect it to this repo with the default (root) working directory, automatic run triggering set to always trigger runs, and auto-apply **off**. Then set these by hand, because `tfe_workspace_settings` doesn't manage them:
    - Terraform version `~> 1.16.0`.
    - **Allow destroy plans off** (Settings → Destruction and Deletion). It's on by default, and this workspace manages every other one.
 
@@ -37,12 +37,12 @@ The workspaces hold state for [cloudflare-horrell](https://github.com/chorrell/c
 
 ## Day to day
 
-- **Making a change:** edit `terraform/` in a PR.
+- **Making a change:** edit the `.tf` files in a PR.
   - CI (`Terraform Validation`) runs fmt, validate and tflint.
-  - HCP posts a speculative plan as `Terraform Cloud/horrell/hcp-terraform`. Read it before merging, because once auto-apply is on, merging applies it.
+  - HCP posts a speculative plan as `Terraform Cloud/horrell/hcp-terraform` on every PR, including docs-only ones, where it should show no changes. Read it before merging, because once auto-apply is on, merging applies it.
 - **Adding a workspace:** add it to `local.workspaces` in `workspaces.tf`. Then add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in github-settings.
 - **Sensitive values:** set or rotate them in the HCP UI. A sensitive `tfe_variable` here would put its value in state.
-- **Local plan:** run `terraform login`, then `terraform init` and `terraform plan` in `terraform/`. Plans run remotely. `terraform apply` from a laptop fails because the workspace is VCS-connected.
+- **Local plan:** run `terraform login`, then `terraform init` and `terraform plan` from the repo root. Plans run remotely. `terraform apply` from a laptop fails because the workspace is VCS-connected.
 - **Linting:** run `pre-commit install` once. The hooks run actionlint, gitleaks, markdownlint (Docker), zizmor, `terraform fmt`, `terraform validate`, tflint and trivy.
 
 > This repo is **private** because it contains account IDs and email addresses.

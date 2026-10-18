@@ -1,20 +1,19 @@
 # AGENTS.md
 
-Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in [cloudflare-horrell](https://github.com/chorrell/cloudflare-horrell), [tailscale-horrell](https://github.com/chorrell/tailscale-horrell) and [horrell.ca](https://github.com/chorrell/horrell.ca). See [README.md](README.md) for the bootstrap order and workflow.
+Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in [cloudflare-horrell](https://github.com/chorrell/cloudflare-horrell), [tailscale-horrell](https://github.com/chorrell/tailscale-horrell) and [horrell.ca](https://github.com/chorrell/horrell.ca). The Terraform lives at the repo root, and the `hcp-terraform` workspace plans on every commit. See [README.md](README.md) for the bootstrap order and workflow.
 
 ## Structure
 
 ```text
-├── terraform/                  # HCP workspace horrell/hcp-terraform: flat root module, no submodules
-│   ├── backend.tf              # HCP Terraform cloud block
-│   ├── versions.tf             # Terraform ~> 1.16, hashicorp/tfe ~> 0.82
-│   ├── provider.tf             # Token from TFE_TOKEN (owners team token)
-│   ├── organization.tf         # tfe_organization + the two projects
-│   ├── workspaces.tf           # local.workspaces map -> tfe_workspace + tfe_workspace_settings
-│   ├── notifications.tf        # Email alerts on every auto-applying workspace
-│   ├── variable_sets.tf        # Variable sets, non-sensitive variables, attachments
-│   ├── workspace_variables.tf  # Non-sensitive workspace variables
-│   └── imports.tf              # One-time imports of the hand-made objects
+├── backend.tf                  # HCP workspace horrell/hcp-terraform (cloud block); flat root module, no submodules
+├── versions.tf                 # Terraform ~> 1.16, hashicorp/tfe ~> 0.82
+├── provider.tf                 # Token from TFE_TOKEN (owners team token)
+├── organization.tf             # tfe_organization + the two projects
+├── workspaces.tf               # local.workspaces map -> tfe_workspace + tfe_workspace_settings
+├── notifications.tf            # Email alerts on every auto-applying workspace
+├── variable_sets.tf            # Variable sets, non-sensitive variables, attachments
+├── workspace_variables.tf      # Non-sensitive workspace variables
+├── imports.tf                  # One-time imports of the hand-made objects
 └── .github/workflows/
     ├── terraform.yml           # fmt, validate, tflint; aggregate `Terraform Validation` check
     ├── markdownlint.yml        # Stub calling chorrell/workflows
@@ -32,5 +31,5 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
   - Variable set attachments belong to `tfe_project_variable_set` / `tfe_workspace_variable_set`. Don't set `workspace_ids` on the variable set.
 - **Don't change settings in the HCP UI.** The next apply reverts them. Make the change here.
 - When adding a workspace, also add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in [github-settings](https://github.com/chorrell/github-settings) (`repos.yaml`).
-- Run `terraform fmt -recursive`, `terraform validate` and `tflint` in `terraform/`, or `pre-commit run --all-files`. Provider bumps need the lock file for both platforms: `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
+- Run `terraform fmt -recursive`, `terraform validate` and `tflint` from the repo root, or `pre-commit run --all-files`. Provider bumps need the lock file for both platforms: `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
 - Commits and PR titles use conventional commits (`feat(workspaces): ...`, `chore(deps): ...`). Branch from `main` with a `feature/` prefix. Keep PR bodies to a few bullets on intent.
