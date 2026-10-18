@@ -4,6 +4,11 @@ locals {
 
   # Every workspace in the org except this one, which manages its own settings in self.tf.
   workspaces = {
+    "github-settings" = {
+      project           = "default"
+      repo              = "chorrell/github-settings"
+      working_directory = ""
+    }
     "horrell-ca" = {
       project             = "horrell_ca"
       repo                = "chorrell/horrell.ca"
@@ -56,13 +61,21 @@ locals {
   }
 
   projects = {
+    default      = data.tfe_project.default.id
     horrell_ca   = tfe_project.horrell_ca.id
     horrell_info = tfe_project.horrell_info.id
   }
 
   # cloudflare-horrell has several roots, so each workspace only runs for changes in its own folder.
-  # The single-root repos (horrell.ca, tailscale-horrell) leave file triggers off and track the default branch.
+  # The single-root repos (github-settings, horrell.ca, tailscale-horrell) leave file triggers off and track the default branch.
   monorepo = "chorrell/cloudflare-horrell"
+}
+
+# Not managed: every org has a Default Project, and it can't be deleted. hcp-terraform and github-settings live in it.
+data "tfe_project" "default" {
+  name = "Default Project"
+  # A literal, like data.tfe_organization_membership.owner, so a pending org update doesn't defer this read to apply time.
+  organization = "horrell"
 }
 
 resource "tfe_workspace" "this" {
