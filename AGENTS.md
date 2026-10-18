@@ -35,6 +35,7 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
   - Variable set attachments belong to `tfe_project_variable_set` / `tfe_workspace_variable_set`. Don't set `workspace_ids` on the variable set.
 - **The `deletion-guard` policy set is the only one the Free plan allows.** Attach workspaces with `tfe_workspace_policy_set` in `policies.tf`, not `workspace_ids` or `global`. Leave the Cloudflare workspaces off it, since their records are replaced routinely.
 - **Don't change settings in the HCP UI.** The next apply reverts them. Make the change here.
+- **New workspaces are created in the HCP UI and imported.** The team token can't create a GitHub App VCS connection, so creating a `tfe_workspace` fails on apply.
 - When adding a workspace, also add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in [github-settings](https://github.com/chorrell/github-settings) (`repos.yaml`).
 - Run `terraform fmt -recursive`, `terraform validate` and `tflint` from the repo root, or `pre-commit run --all-files`. Provider bumps need the lock file for both platforms: `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
 - Commits and PR titles use conventional commits (`feat(workspaces): ...`, `chore(deps): ...`). Branch from `main` with a `feature/` prefix. Keep PR bodies to a few bullets on intent.
