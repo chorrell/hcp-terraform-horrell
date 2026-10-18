@@ -1,6 +1,7 @@
+# Looked up by HCP username rather than email, so no address is in the code. Notifications go to the account's email.
 data "tfe_organization_membership" "owner" {
   organization = tfe_organization.horrell.name
-  email        = "chrishorrell@icloud.com"
+  username     = "chorrell2022"
 }
 
 # Merges apply without a confirm, and nobody watches the runs, so email the owner when one starts applying, waits for
