@@ -1,50 +1,36 @@
 # AGENTS.md
 
-The GitHub template (`is_template: true`) that new `chorrell` repositories are
-created from. It contains only shared configuration, no application code. See
-[README.md](README.md) for what each file does and the checklist for new
-repositories.
+Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in [cloudflare-horrell](https://github.com/chorrell/cloudflare-horrell), [tailscale-horrell](https://github.com/chorrell/tailscale-horrell) and [horrell.ca](https://github.com/chorrell/horrell.ca). See [README.md](README.md) for the bootstrap order and workflow.
 
 ## Structure
 
 ```text
-├── .pre-commit-config.yaml     # actionlint, gitleaks, markdownlint-cli2 (Docker), hygiene hooks, zizmor
-├── .markdownlint.yaml          # MD013 (line length) disabled
-├── .gitignore                  # Language-agnostic: OS files, .env*, editor dirs, .claude/settings.local.json
-├── .gitattributes              # * text=auto
-├── AGENTS.md / CLAUDE.md       # Agent guidance; CLAUDE.md only imports AGENTS.md
-├── LICENSE                     # MPL-2.0
-└── .github/
-    ├── CODEOWNERS              # * @chorrell
-    ├── dependabot.yml          # github-actions + pre-commit, monthly, grouped, 7-day cooldown
-    ├── zizmor.yml              # chorrell/* may be tag-pinned; everything else hash-pinned
-    └── workflows/
-        ├── markdownlint.yml    # PR stub calling chorrell/workflows markdownlint.yml@v1
-        └── zizmor.yml          # PR + main stub calling chorrell/workflows zizmor.yml@v1
+├── terraform/                  # HCP workspace horrell/hcp-terraform: flat root module, no submodules
+│   ├── backend.tf              # HCP Terraform cloud block
+│   ├── versions.tf             # Terraform ~> 1.16, hashicorp/tfe ~> 0.82
+│   ├── provider.tf             # Token from TFE_TOKEN (owners team token)
+│   ├── organization.tf         # tfe_organization + the two projects
+│   ├── workspaces.tf           # local.workspaces map -> tfe_workspace + tfe_workspace_settings
+│   ├── notifications.tf        # Email alerts on every auto-applying workspace
+│   ├── variable_sets.tf        # Variable sets, non-sensitive variables, attachments
+│   ├── workspace_variables.tf  # Non-sensitive workspace variables
+│   └── imports.tf              # One-time imports of the hand-made objects
+└── .github/workflows/
+    ├── terraform.yml           # fmt, validate, tflint; aggregate `Terraform Validation` check
+    ├── markdownlint.yml        # Stub calling chorrell/workflows
+    └── zizmor.yml              # Stub calling chorrell/workflows
 ```
 
 ## Rules
 
-- **Everything here is copied into every new repository.** Keep it
-  language-agnostic. Python, Docker, Terraform and similar hooks, Dependabot
-  ecosystems and ignores belong in the repositories that need them.
-- **Keep this in sync with my other repositories.** When a shared default
-  changes (a hook, the Dependabot layout, the markdownlint stub), change it here
-  too, so new repositories don't start out of date.
-- **Reusable workflows live in [chorrell/workflows](https://github.com/chorrell/workflows).**
-  Workflows here are short stubs that own their triggers, `permissions` and
-  `concurrency` and call the shared workflow by tag (`@v1`). Third-party actions
-  are pinned by commit hash with a version comment; zizmor enforces this.
-- **Repository settings aren't configured here.** Merge settings, rulesets and
-  required status checks are managed by Terraform in
-  [chorrell/github-settings](https://github.com/chorrell/github-settings)
-  (`repos.yaml`). Don't change them in the GitHub UI.
-- Run `pre-commit run --all-files` before pushing (the markdownlint hook needs
-  Docker). CI runs markdownlint on pull requests to `main`, and zizmor on
-  every pull request and push to `main`. `zizmor / zizmor` is a required check
-  on every repository, so don't remove the zizmor stub.
-- Dependabot opens grouped monthly PRs: `ci(deps): ...` for Actions,
-  `chore(deps): ...` for pre-commit hooks.
-- Commits and PR titles use conventional commits (`feat: ...`, `ci: ...`,
-  `chore(deps): ...`). Branch from `main` with a `feature/` prefix. PRs are
-  squash-merged, so keep PR bodies short and focused on intent.
+- **Never manage a sensitive value here.** Don't add a `tfe_variable` with `sensitive = true` and a real value, because it would be stored in state. Sensitive variables are set by hand in the HCP UI and stay out of this config.
+- **Keep `prevent_destroy`** on the organization, projects, workspaces and variable sets. Workspaces hold state and VCS connections, and a destroy or replace would lose them.
+  - `prevent_destroy` only covers resources still in config. A PR that removes a workspace from `local.workspaces` plans a plain destroy, so check every plan's "to destroy" count.
+- **Renaming a map key or resource needs a `moved` block**, or Terraform plans a destroy and create.
+- **One owner per setting.**
+  - `auto_apply`, execution mode and remote state sharing belong to `tfe_workspace_settings`. Don't also set them on `tfe_workspace`.
+  - Variable set attachments belong to `tfe_project_variable_set` / `tfe_workspace_variable_set`. Don't set `workspace_ids` on the variable set.
+- **Don't change settings in the HCP UI.** The next apply reverts them. Make the change here.
+- When adding a workspace, also add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in [github-settings](https://github.com/chorrell/github-settings) (`repos.yaml`).
+- Run `terraform fmt -recursive`, `terraform validate` and `tflint` in `terraform/`, or `pre-commit run --all-files`. Provider bumps need the lock file for both platforms: `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
+- Commits and PR titles use conventional commits (`feat(workspaces): ...`, `chore(deps): ...`). Branch from `main` with a `feature/` prefix. Keep PR bodies to a few bullets on intent.
