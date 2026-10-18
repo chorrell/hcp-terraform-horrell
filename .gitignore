@@ -17,3 +17,16 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfvars
+*.auto.tfvars
+generated.tf

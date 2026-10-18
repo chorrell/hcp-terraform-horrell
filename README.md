@@ -1,55 +1,52 @@
-# template-repo
+# hcp-terraform-horrell
 
-[![markdownlint](https://github.com/chorrell/template-repo/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/chorrell/template-repo/actions/workflows/markdownlint.yml)
+[![terraform](https://github.com/chorrell/hcp-terraform-horrell/actions/workflows/terraform.yml/badge.svg)](https://github.com/chorrell/hcp-terraform-horrell/actions/workflows/terraform.yml)
 
-The GitHub template I start new repositories from. It holds the lint,
-Dependabot and pre-commit defaults every project shares, so a new repository
-starts with the same baseline instead of copying files by hand.
+This repo is the source of truth for the `horrell` [HCP Terraform](https://app.terraform.io/app/horrell) organization. It covers the org settings, projects, each workspace's VCS connection and run settings, run notifications, and variable sets. The HCP workspace `hcp-terraform` manages them with the [`hashicorp/tfe`](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs) provider. Change these settings here, not in the HCP UI, because the next apply reverts UI edits.
 
-## What's included
+The workspaces hold state for [cloudflare-horrell](https://github.com/chorrell/cloudflare-horrell), [tailscale-horrell](https://github.com/chorrell/tailscale-horrell) and [horrell.ca](https://github.com/chorrell/horrell.ca).
 
-| File | Purpose |
+## What's managed
+
+| File | Manages |
 | --- | --- |
-| [`.pre-commit-config.yaml`](.pre-commit-config.yaml) | actionlint, gitleaks, markdownlint-cli2, zizmor and the standard `pre-commit-hooks` hygiene checks |
-| [`.github/dependabot.yml`](.github/dependabot.yml) | Monthly, grouped updates for GitHub Actions and pre-commit hooks, with a 7-day cooldown |
-| [`.github/workflows/markdownlint.yml`](.github/workflows/markdownlint.yml) | Lints Markdown on pull requests with the shared [chorrell/workflows](https://github.com/chorrell/workflows) workflow |
-| [`.github/workflows/zizmor.yml`](.github/workflows/zizmor.yml) | Audits GitHub Actions workflows with zizmor on pull requests and pushes to `main`, using the shared chorrell/workflows workflow |
-| [`.github/zizmor.yml`](.github/zizmor.yml) | Lets `chorrell/*` reusable workflows be pinned by tag; everything else must be pinned by commit hash |
-| [`.github/CODEOWNERS`](.github/CODEOWNERS) | Requests my review on every change |
-| [`.markdownlint.yaml`](.markdownlint.yaml) | Markdown lint rules (line length is not enforced) |
-| [`.gitignore`](.gitignore) / [`.gitattributes`](.gitattributes) | Language-agnostic ignores and LF normalization |
-| [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) | Guidance for coding agents; `CLAUDE.md` imports `AGENTS.md` |
-| [`LICENSE`](LICENSE) | Mozilla Public License 2.0 |
+| [`organization.tf`](organization.tf) | Org settings (commit statuses, speculative plan cancellation) and the `Horrell-ca` / `Horrell-info` projects |
+| [`workspaces.tf`](workspaces.tf) | The nine workspaces: VCS repo, working directory, trigger prefixes, Terraform version, destroy plans off. Auto-apply and remote state go through `tfe_workspace_settings` |
+| [`notifications.tf`](notifications.tf) | Email alerts (applying, pending approval, errored) on every auto-applying workspace |
+| [`variable_sets.tf`](variable_sets.tf) | The four variable sets, their non-sensitive variables, and their project and workspace attachments |
+| [`workspace_variables.tf`](workspace_variables.tf) | Non-sensitive workspace variables (`alert_emails` on `horrell-ca`) |
+| [`variables.tf`](variables.tf) | `organization_email` and `alert_emails`, so no email address is in the code. Their values live on the `hcp-terraform` workspace |
+| [`imports.tf`](imports.tf) | One-time `import` blocks for the objects created by hand. Delete it after the first apply |
 
-## Creating a repository from this template
+**Not managed:** sensitive variable values (`CLOUDFLARE_API_TOKEN`, `cloudflare_api_token_info`, `DIGITALOCEAN_TOKEN`, `SPACES_*`, `TAILSCALE_OAUTH_CLIENT_ID`, `TFC_WORKLOAD_IDENTITY_AUDIENCE`). They're set by hand in the HCP UI, so they never end up in this repo or its state.
 
-```sh
-gh repo create chorrell/<name> --template chorrell/template-repo --public --clone
-```
+## Bootstrap (one time, in order)
 
-Then:
+1. **Workspace.** In org `horrell`, create workspace `hcp-terraform` in the Default Project. Connect it to this repo with the default (root) working directory, automatic run triggering set to always trigger runs, and auto-apply **off**. Then set these by hand, because `tfe_workspace_settings` doesn't manage them:
+   - Terraform version `~> 1.16.0`.
+   - **Allow destroy plans off** (Settings → Destruction and Deletion). It's on by default, and this workspace manages every other one.
 
-1. Retitle this README and describe the new project.
-2. Rewrite `AGENTS.md` for the project. Keep `CLAUDE.md` as it is.
-3. Add language-specific pre-commit hooks (ruff, shellcheck, hadolint,
-   terraform, ...) and Dependabot ecosystems (`docker`, `uv`, `terraform`, ...).
-4. Add language-specific entries to `.gitignore`.
-5. Check that `CODEOWNERS` and `LICENSE` still fit.
-6. Add the repository to
-   [chorrell/github-settings](https://github.com/chorrell/github-settings)
-   (its daily bot proposes it), with any CI checks it should require beyond
-   `zizmor / zizmor`, which every repository requires.
+   If HCP's GitHub App is installed for selected repositories only, add this repo to the installation first, or HCP can't connect to it.
+2. **Token.** The Free plan has no custom teams, so the only team token is the `owners` team's, which is org admin. Create it under Organization settings → API tokens → Team Tokens → Create a team token, and pick the `owners` team. Add it to the workspace as the **sensitive environment variable** `TFE_TOKEN`. Don't use a personal user token. Also add the **Terraform variables** `organization_email` (the org's admin email) and `alert_emails` (HCL list, for example `["you@example.com"]`).
+3. **Import.** Merge the import PR. Its speculative plan must read `49 to import, 0 to add, 1 to change, 0 to destroy`. The one change is `tfe_organization.horrell`'s `email` becoming sensitive, and the plan says the value is unchanged. Anything else changing means the config doesn't match the live settings. Confirm the apply in the HCP UI.
+4. **Self-management.** In a follow-up PR, delete `imports.tf` and add `self.tf` with:
+   - `data "tfe_workspace"` for `hcp-terraform`
+   - a `tfe_workspace_settings` that turns auto-apply on
+   - the workspace's email notification
 
-## Local development
+   Then add `Terraform Cloud/horrell/hcp-terraform` to the required checks in [github-settings](https://github.com/chorrell/github-settings).
 
-Install [pre-commit](https://pre-commit.com/) and run the hooks before pushing:
+## Day to day
 
-```sh
-pre-commit install
-pre-commit run --all-files
-```
+- **Making a change:** edit the `.tf` files in a PR.
+  - CI (`Terraform Validation`) runs fmt, validate and tflint.
+  - HCP posts a speculative plan as `Terraform Cloud/horrell/hcp-terraform` on every PR, including docs-only ones, where it should show no changes. Read it before merging, because once auto-apply is on, merging applies it.
+- **Adding a workspace:** add it to `local.workspaces` in `workspaces.tf`. Then add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in github-settings.
+- **Sensitive values:** set or rotate them in the HCP UI. A sensitive `tfe_variable` here would put its value in state.
+- **Local plan:** run `terraform login`, then `terraform init` and `terraform plan` from the repo root. Plans run remotely. `terraform apply` from a laptop fails because the workspace is VCS-connected.
+- **Linting:** run `pre-commit install` once. The hooks run actionlint, gitleaks, markdownlint (Docker), zizmor, `terraform fmt`, `terraform validate`, tflint and trivy.
 
-The markdownlint hook runs in Docker, so Docker needs to be running.
+> This repo is **private** because it contains account IDs and email addresses.
 
 ## License
 

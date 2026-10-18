@@ -1,0 +1,65 @@
+---
+name: terraform
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ~1.16
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        # readonly: fail if the committed lock file is missing or out of date
+        run: terraform init -backend=false -lockfile=readonly
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@1cf010d3c7aef302051ccdb68c14c5dc2efa34ef # v6.3.1
+
+      - name: Run TFLint
+        run: tflint --recursive
+
+  # The only CI check the main ruleset requires, so jobs above can be renamed,
+  # split, or added without touching the ruleset. Add every new job to needs.
+  terraform-validation:
+    name: Terraform Validation
+    if: always()
+    needs: [validate]
+    runs-on: ubuntu-slim
+    steps:
+      - name: Require every job to succeed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: ${RESULTS}"
+          for result in ${RESULTS}; do
+            if [ "${result}" != "success" ]; then
+              echo "::error::A required job did not succeed (${result})"
+              exit 1
+            fi
+          done
