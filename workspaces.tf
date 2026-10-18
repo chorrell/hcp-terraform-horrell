@@ -8,6 +8,7 @@ locals {
       project           = "default"
       repo              = "chorrell/github-settings"
       working_directory = ""
+      terraform_version = "~>1.16.0"
     }
     "horrell-ca" = {
       project             = "horrell_ca"
