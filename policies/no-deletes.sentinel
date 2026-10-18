@@ -1,0 +1,14 @@
+# Fails any run that would delete a managed resource, including a replace (delete then create, or create then delete).
+# Imports, updates, creates and `removed { lifecycle { destroy = false } }` blocks still pass.
+#
+# The policy is soft-mandatory: an intended delete needs an owner to override the failed check on that run.
+
+import "tfplan/v2" as tfplan
+
+deletes = filter tfplan.resource_changes as address, rc {
+	rc.mode is "managed" and rc.change.actions contains "delete"
+}
+
+main = rule {
+	print("Resources this run would delete or replace:", keys(deletes)) and length(deletes) is 0
+}
