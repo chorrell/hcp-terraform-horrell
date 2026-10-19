@@ -11,7 +11,7 @@ locals {
       project     = "horrell_ca"
     }
     "horrell-ca-cloudflare" = {
-      description = "Shared horrell.ca Cloudflare context (API token + zone ID) for the 3 CF workspaces (dns/waf/r2), not the DO workspace"
+      description = "Shared horrell.ca Cloudflare context (API token + zone ID) for the 4 CF workspaces (dns/r2/settings/waf), not the DO workspace"
       workspaces  = ["horrell-ca-dns", "horrell-ca-r2", "horrell-ca-settings", "horrell-ca-waf"]
     }
     "horrell-info-shared" = {
