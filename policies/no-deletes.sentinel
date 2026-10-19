@@ -1,14 +1,47 @@
-# Fails any run that would delete a managed resource, including a replace (delete then create, or create then delete).
-# Imports, updates, creates and `removed { lifecycle { destroy = false } }` blocks still pass.
+# Fails a run that would delete a high-value managed resource, including a replace (delete then create, or create then
+# delete). On github-settings, which has nothing routine to replace, it fails any delete at all.
+# Imports, updates, creates and `removed { lifecycle { destroy = false } }` blocks (a "forget") still pass.
+#
+# Types are listed rather than every delete, because DNS records and zone settings are replaced routinely.
+# A type listed here guards it in every attached workspace.
 #
 # The policy is soft-mandatory: an intended delete needs an owner to override the failed check on that run.
 
 import "tfplan/v2" as tfplan
+import "tfrun"
+
+protected_types = [
+	# hcp-terraform: the org, its projects and workspaces (state and VCS connections), and this guard itself.
+	"tfe_organization",
+	"tfe_project",
+	"tfe_workspace",
+	"tfe_variable_set",
+	"tfe_policy_set",
+	"tfe_workspace_policy_set",
+
+	# horrell-ca: the Ghost droplet, its public IP, its disks and its backups bucket.
+	"digitalocean_droplet",
+	"digitalocean_reserved_ip",
+	"digitalocean_volume",
+	"digitalocean_spaces_bucket",
+
+	# cloudflare-horrell: the zones, DNSSEC (a delete breaks resolution until the DS record is removed),
+	# the R2 bucket and its domain, and the WAF and redirect rulesets.
+	"cloudflare_zone",
+	"cloudflare_zone_dnssec",
+	"cloudflare_r2_bucket",
+	"cloudflare_r2_custom_domain",
+	"cloudflare_ruleset",
+]
+
+guard_all = tfrun.workspace.name is "github-settings"
 
 deletes = filter tfplan.resource_changes as address, rc {
-	rc.mode is "managed" and rc.change.actions contains "delete"
+	rc.mode is "managed" and
+		rc.change.actions contains "delete" and
+		(guard_all or rc.type in protected_types)
 }
 
 main = rule {
-	print("Resources this run would delete or replace:", keys(deletes)) and length(deletes) is 0
+	print("Protected resources this run would delete or replace:", keys(deletes)) and length(deletes) is 0
 }
