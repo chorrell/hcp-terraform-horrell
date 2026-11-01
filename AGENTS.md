@@ -18,7 +18,7 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
 ├── variables.tf                # organization_email, alert_emails (values on the hcp-terraform workspace)
 ├── self.tf                     # This workspace's own settings via data "tfe_workspace"
 └── .github/workflows/
-    ├── terraform.yml           # fmt, validate, tflint; aggregate `Terraform Validation` check
+    ├── terraform.yml           # Shared terraform-validate (fmt, validate, tflint); aggregate `Terraform Validation` check
     ├── markdownlint.yml        # Stub calling chorrell/workflows
     └── zizmor.yml              # Stub calling chorrell/workflows
 ```
