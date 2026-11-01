@@ -1,0 +1,19 @@
+---
+name: pre-commit
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    uses: chorrell/workflows/.github/workflows/pre-commit.yml@v1
+    with:
+      # Terraform hooks need terraform, tflint and trivy, which the runner lacks; terraform.yml covers fmt, validate and tflint
+      skip: terraform_fmt,terraform_validate,terraform_tflint,terraform_trivy
