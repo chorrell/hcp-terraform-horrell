@@ -40,5 +40,5 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
 - **Don't change settings in the HCP UI.** The next apply reverts them. Make the change here.
 - **New workspaces are created in the HCP UI and imported.** The team token can't create a GitHub App VCS connection, so creating a `tfe_workspace` fails on apply.
 - When adding a workspace, attach it to `deletion-guard` unless its applies are confirmed by hand, and add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in [github-settings](https://github.com/chorrell/github-settings) (`repos.yaml`).
-- Run `terraform fmt -recursive`, `terraform validate` and `tflint` from the repo root, or `pre-commit run --all-files`. Provider bumps need the lock file for both platforms: `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
+- Run `terraform fmt -recursive`, `terraform validate` and `tflint` from the repo root, or `prek run --all-files`. Provider bumps need the lock file for both platforms: `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
 - Commits and PR titles use conventional commits (`feat(workspaces): ...`, `chore(deps): ...`). Branch from `main` with a `feature/` prefix. Keep PR bodies to a few bullets on intent.
