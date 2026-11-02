@@ -17,6 +17,11 @@ locals {
       terraform_version   = "~>1.16.0"
       global_remote_state = true
     }
+    "horrell-ca-cache" = {
+      project           = "horrell_ca"
+      repo              = "chorrell/cloudflare-horrell"
+      working_directory = "horrell.ca/cache"
+    }
     "horrell-ca-dns" = {
       project           = "horrell_ca"
       repo              = "chorrell/cloudflare-horrell"
