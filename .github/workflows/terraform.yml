@@ -16,7 +16,7 @@ concurrency:
 jobs:
   # fmt, init -lockfile=readonly, validate and tflint from the shared workflow
   validate:
-    uses: chorrell/workflows/.github/workflows/terraform-validate.yml@v1
+    uses: chorrell/workflows/.github/workflows/terraform-validate.yml@4ed3c9972cc90351f62ab48f11908436adc21bbf
     with:
       lockfile-readonly: true
 
