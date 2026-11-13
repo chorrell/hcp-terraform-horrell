@@ -1,5 +1,6 @@
 locals {
-  # GitHub App installation that connects HCP Terraform to github.com/chorrell.
+  # GitHub App installation that connects HCP Terraform to github.com/chorrell. Workspaces whose repo is in another
+  # GitHub account set their own github_app_installation_id.
   github_app_installation_id = "ghain-auj1gVJBwevGsznW"
 
   # Every workspace in the org except this one, which manages its own settings in self.tf.
@@ -9,6 +10,14 @@ locals {
       repo              = "chorrell/github-settings"
       working_directory = ""
       terraform_version = "~>1.16.0"
+    }
+    # Public portfolio repo in the horrell-consulting GitHub org, connected through that org's own installation.
+    "horrell-consulting-github-settings" = {
+      project                    = "default"
+      repo                       = "horrell-consulting/github-settings"
+      working_directory          = ""
+      terraform_version          = "~>1.16.0"
+      github_app_installation_id = data.tfe_github_app_installation.horrell_consulting.id
     }
     "horrell-ca" = {
       project             = "horrell_ca"
@@ -77,6 +86,11 @@ locals {
   monorepo = "chorrell/cloudflare-horrell"
 }
 
+# HCP Terraform's GitHub App installation on the horrell-consulting GitHub org, looked up by account name.
+data "tfe_github_app_installation" "horrell_consulting" {
+  name = "horrell-consulting"
+}
+
 # Not managed: every org has a Default Project, and it can't be deleted. hcp-terraform and github-settings live in it.
 data "tfe_project" "default" {
   name = "Default Project"
@@ -107,7 +121,7 @@ resource "tfe_workspace" "this" {
   vcs_repo {
     identifier                 = each.value.repo
     branch                     = each.value.repo == local.monorepo ? "main" : null
-    github_app_installation_id = local.github_app_installation_id
+    github_app_installation_id = lookup(each.value, "github_app_installation_id", local.github_app_installation_id)
   }
 
   lifecycle {

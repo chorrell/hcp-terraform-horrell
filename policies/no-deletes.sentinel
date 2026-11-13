@@ -1,5 +1,5 @@
 # Fails a run that would delete a high-value managed resource, including a replace (delete then create, or create then
-# delete). On github-settings, which has nothing routine to replace, it fails any delete at all.
+# delete). On the two github-settings workspaces, which have nothing routine to replace, it fails any delete at all.
 # Imports, updates, creates and `removed { lifecycle { destroy = false } }` blocks (a "forget") still pass.
 #
 # Types are listed rather than every delete, because DNS records and zone settings are replaced routinely.
@@ -34,7 +34,7 @@ protected_types = [
 	"cloudflare_ruleset",
 ]
 
-guard_all = tfrun.workspace.name is "github-settings"
+guard_all = tfrun.workspace.name in ["github-settings", "horrell-consulting-github-settings"]
 
 deletes = filter tfplan.resource_changes as address, rc {
 	rc.mode is "managed" and

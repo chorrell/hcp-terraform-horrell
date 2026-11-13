@@ -1,12 +1,12 @@
 # Deletion guard for workspaces that auto-apply. The Free plan allows one policy set and one mandatory policy, so this
 # is the only set. Attach it with tfe_workspace_policy_set, not workspace_ids or global.
-# The policy guards a list of high-value resource types everywhere, and every resource on github-settings. DNS records
+# The policy guards a list of high-value resource types everywhere, and every resource on both github-settings workspaces. DNS records
 # aren't listed, because they're replaced as a matter of course. tailscale is left off, since its applies are confirmed
 # by hand.
 
 resource "tfe_policy" "no_deletes" {
   name         = "no-deletes"
-  description  = "Fails any run that deletes or replaces a protected resource type, or any resource on github-settings. Override the check to allow an intended delete."
+  description  = "Fails any run that deletes or replaces a protected resource type, or any resource on a github-settings workspace. Override the check to allow an intended delete."
   organization = tfe_organization.horrell.name
   kind         = "sentinel"
   policy       = file("${path.module}/policies/no-deletes.sentinel")

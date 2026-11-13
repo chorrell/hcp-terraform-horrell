@@ -4,14 +4,14 @@
 
 This repo is the source of truth for the `horrell` [HCP Terraform](https://app.terraform.io/app/horrell) organization. It covers the org settings, projects, each workspace's VCS connection and run settings, run notifications, and variable sets. The HCP workspace `hcp-terraform` manages them with the [`hashicorp/tfe`](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs) provider. Change these settings here, not in the HCP UI, because the next apply reverts UI edits.
 
-The workspaces hold state for four private repos: `cloudflare-horrell` (Cloudflare DNS, WAF, cache and R2 for horrell.ca and horrell.info), `tailscale-horrell` (the tailnet), `horrell.ca` (the DigitalOcean droplet that runs Ghost) and `github-settings` (repository settings and rulesets).
+The workspaces hold state for four private repos: `cloudflare-horrell` (Cloudflare DNS, WAF, cache and R2 for horrell.ca and horrell.info), `tailscale-horrell` (the tailnet), `horrell.ca` (the DigitalOcean droplet that runs Ghost) and `github-settings` (repository settings and rulesets). A fifth, public repo, [horrell-consulting/github-settings](https://github.com/horrell-consulting/github-settings), does the same for the `horrell-consulting` GitHub org; its workspace connects through HCP's GitHub App installation on that org.
 
 ## Deletion guard
 
 Merging a PR applies it with no confirm step, and nobody watches the runs. A wrong plan could delete a workspace's state, a droplet, a bucket or a DNSSEC key before anyone notices. Two layers stop that:
 
 - **`prevent_destroy`** on the organization, projects, workspaces, variable sets and policy set. Terraform refuses to plan a destroy or replace of them.
-- **The `deletion-guard` Sentinel policy set**, attached to every auto-applying workspace in the org, including this one. Its [`no-deletes`](policies/no-deletes.sentinel) policy fails any plan that deletes or replaces a protected resource type, and any delete at all on `github-settings`. It catches what `prevent_destroy` can't: a resource whose config block was removed.
+- **The `deletion-guard` Sentinel policy set**, attached to every auto-applying workspace in the org, including this one. Its [`no-deletes`](policies/no-deletes.sentinel) policy fails any plan that deletes or replaces a protected resource type, and any delete at all on `github-settings` and `horrell-consulting-github-settings`. It catches what `prevent_destroy` can't: a resource whose config block was removed.
 
 The policy is soft-mandatory. An intended delete goes through when an org owner overrides the failed check on that run. DNS records aren't protected, because they're replaced as a matter of course.
 
@@ -20,7 +20,7 @@ The policy is soft-mandatory. An intended delete goes through when an org owner 
 | File | Manages |
 | --- | --- |
 | [`organization.tf`](organization.tf) | Org settings (commit statuses, speculative plan cancellation) and the `Horrell-ca` / `Horrell-info` projects. The Default Project is looked up, not managed |
-| [`workspaces.tf`](workspaces.tf) | The eleven workspaces: VCS repo, working directory, trigger prefixes, Terraform version, destroy plans off. Auto-apply and remote state go through `tfe_workspace_settings` |
+| [`workspaces.tf`](workspaces.tf) | The twelve workspaces: VCS repo, working directory, trigger prefixes, Terraform version, destroy plans off. Auto-apply and remote state go through `tfe_workspace_settings` |
 | [`notifications.tf`](notifications.tf) | Email alerts (applying, pending approval, errored) on every auto-applying workspace |
 | [`policies.tf`](policies.tf) | The `deletion-guard` Sentinel policy set and its `no-deletes` policy ([`policies/`](policies)), attached to every auto-applying workspace (all but `tailscale`) |
 | [`variable_sets.tf`](variable_sets.tf) | The four variable sets, their non-sensitive variables, and their project and workspace attachments |
