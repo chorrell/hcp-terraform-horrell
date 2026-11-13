@@ -4,14 +4,23 @@
 
 This repo is the source of truth for the `horrell` [HCP Terraform](https://app.terraform.io/app/horrell) organization. It covers the org settings, projects, each workspace's VCS connection and run settings, run notifications, and variable sets. The HCP workspace `hcp-terraform` manages them with the [`hashicorp/tfe`](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs) provider. Change these settings here, not in the HCP UI, because the next apply reverts UI edits.
 
-The workspaces hold state for [cloudflare-horrell](https://github.com/chorrell/cloudflare-horrell), [tailscale-horrell](https://github.com/chorrell/tailscale-horrell), [horrell.ca](https://github.com/chorrell/horrell.ca) and [github-settings](https://github.com/chorrell/github-settings).
+The workspaces hold state for four private repos: `cloudflare-horrell` (Cloudflare DNS, WAF, cache and R2 for horrell.ca and horrell.info), `tailscale-horrell` (the tailnet), `horrell.ca` (the DigitalOcean droplet that runs Ghost) and `github-settings` (repository settings and rulesets).
+
+## Deletion guard
+
+Merging a PR applies it with no confirm step, and nobody watches the runs. A wrong plan could delete a workspace's state, a droplet, a bucket or a DNSSEC key before anyone notices. Two layers stop that:
+
+- **`prevent_destroy`** on the organization, projects, workspaces, variable sets and policy set. Terraform refuses to plan a destroy or replace of them.
+- **The `deletion-guard` Sentinel policy set**, attached to every auto-applying workspace in the org, including this one. Its [`no-deletes`](policies/no-deletes.sentinel) policy fails any plan that deletes or replaces a protected resource type, and any delete at all on `github-settings`. It catches what `prevent_destroy` can't: a resource whose config block was removed.
+
+The policy is soft-mandatory. An intended delete goes through when an org owner overrides the failed check on that run. DNS records aren't protected, because they're replaced as a matter of course.
 
 ## What's managed
 
 | File | Manages |
 | --- | --- |
 | [`organization.tf`](organization.tf) | Org settings (commit statuses, speculative plan cancellation) and the `Horrell-ca` / `Horrell-info` projects. The Default Project is looked up, not managed |
-| [`workspaces.tf`](workspaces.tf) | The ten workspaces: VCS repo, working directory, trigger prefixes, Terraform version, destroy plans off. Auto-apply and remote state go through `tfe_workspace_settings` |
+| [`workspaces.tf`](workspaces.tf) | The eleven workspaces: VCS repo, working directory, trigger prefixes, Terraform version, destroy plans off. Auto-apply and remote state go through `tfe_workspace_settings` |
 | [`notifications.tf`](notifications.tf) | Email alerts (applying, pending approval, errored) on every auto-applying workspace |
 | [`policies.tf`](policies.tf) | The `deletion-guard` Sentinel policy set and its `no-deletes` policy ([`policies/`](policies)), attached to every auto-applying workspace (all but `tailscale`) |
 | [`variable_sets.tf`](variable_sets.tf) | The four variable sets, their non-sensitive variables, and their project and workspace attachments |
@@ -30,7 +39,7 @@ The workspaces hold state for [cloudflare-horrell](https://github.com/chorrell/c
    If HCP's GitHub App is installed for selected repositories only, add this repo to the installation first, or HCP can't connect to it.
 2. **Token.** The Free plan has no custom teams, so the only team token is the `owners` team's, which is org admin. Create it under Organization settings → API tokens → Team Tokens → Create a team token, and pick the `owners` team. Add it to the workspace as the **sensitive environment variable** `TFE_TOKEN`. Don't use a personal user token. Also add the **Terraform variables** `organization_email` (the org's admin email) and `alert_emails` (HCL list, for example `["you@example.com"]`).
 3. **Import.** Merge the import PR. Its speculative plan must read `49 to import, 0 to add, 1 to change, 0 to destroy`. The one change is `tfe_organization.horrell`'s `email` becoming sensitive, and the plan says the value is unchanged. Anything else changing means the config doesn't match the live settings. Confirm the apply in the HCP UI.
-4. **Self-management.** Merge the self-management PR. It deletes `imports.tf` and adds [`self.tf`](self.tf), which turns on this workspace's auto-apply and adds its email notification. Then make `Terraform Cloud/horrell/hcp-terraform` a required check in [github-settings](https://github.com/chorrell/github-settings). It runs on HCP Terraform with apply-on-merge, so merging that change applies it.
+4. **Self-management.** Merge the self-management PR. It deletes `imports.tf` and adds [`self.tf`](self.tf), which turns on this workspace's auto-apply and adds its email notification. Then make `Terraform Cloud/horrell/hcp-terraform` a required check in `github-settings`. It runs on HCP Terraform with apply-on-merge, so merging that change applies it.
 
 ## Day to day
 
@@ -38,12 +47,10 @@ The workspaces hold state for [cloudflare-horrell](https://github.com/chorrell/c
   - CI (`Terraform Validation`) runs fmt, validate and tflint.
   - HCP posts a speculative plan as `Terraform Cloud/horrell/hcp-terraform` on every PR, including docs-only ones, where it should show no changes. Read it before merging, because once auto-apply is on, merging applies it.
 - **Adding a workspace:** create it by hand in the HCP UI first, connected to its repo through the GitHub App, with auto-apply off. The `owners` team token can't create a GitHub App VCS connection, because that needs a user with a linked GitHub account. Then add it to `local.workspaces` in `workspaces.tf` with an `import` block, and match the live values so the plan shows only the import. Delete the `import` block once it has been applied. Then add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in github-settings.
-- **Deletion guard:** every auto-applying workspace is attached to `deletion-guard`. Its `no-deletes` policy fails a plan that deletes or replaces a protected resource type, such as a workspace, droplet, reserved IP, Spaces or R2 bucket, DNSSEC or ruleset. On `github-settings` it fails any delete. DNS records aren't protected, since they're replaced routinely. A failure posts as `sentinel/horrell/<name>`, and the PR's `Terraform Cloud/horrell/<name>` check fails with it. The policy is soft-mandatory, so for an intended delete, an org owner overrides the policy check on that run in the HCP UI. The Free plan allows one policy set and one mandatory policy, so add other workspaces to this set rather than creating another.
+- **Deletion guard (see [above](#deletion-guard)):** the protected types include workspaces, droplets, reserved IPs, Spaces and R2 buckets, DNSSEC and rulesets. A failure posts as `sentinel/horrell/<name>`, and the PR's `Terraform Cloud/horrell/<name>` check fails with it. For an intended delete, an org owner overrides the policy check on that run in the HCP UI. The Free plan allows one policy set and one mandatory policy, so add other workspaces to this set rather than creating another.
 - **Sensitive values:** set or rotate them in the HCP UI. A sensitive `tfe_variable` here would put its value in state.
 - **Local plan:** run `terraform login`, then `terraform init` and `terraform plan` from the repo root. Plans run remotely. `terraform apply` from a laptop fails because the workspace is VCS-connected.
 - **Linting:** run `prek install` once. The hooks run gitleaks, markdownlint (Docker), zizmor, `terraform fmt`, `terraform validate`, tflint and trivy. zizmor is the workflow linter; actionlint isn't used because it rejects GitHub's `$/` self-repository `uses:` syntax ([rhysd/actionlint#711](https://github.com/rhysd/actionlint/issues/711)).
-
-> This repo is **private** because it contains account IDs and email addresses.
 
 ## License
 

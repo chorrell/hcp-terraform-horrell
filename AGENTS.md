@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in [cloudflare-horrell](https://github.com/chorrell/cloudflare-horrell), [tailscale-horrell](https://github.com/chorrell/tailscale-horrell), [horrell.ca](https://github.com/chorrell/horrell.ca) and [github-settings](https://github.com/chorrell/github-settings). The Terraform lives at the repo root, and the `hcp-terraform` workspace plans on every commit. See [README.md](README.md) for the bootstrap order and workflow.
+Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in the private repos `cloudflare-horrell`, `tailscale-horrell`, `horrell.ca` and `github-settings`. The Terraform lives at the repo root, and the `hcp-terraform` workspace plans on every commit. See [README.md](README.md) for the bootstrap order and workflow.
 
 ## Structure
 
@@ -39,6 +39,6 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
   - `prevent_destroy` stops a plan before Sentinel runs, so the policy matters most when a resource's config block is removed.
 - **Don't change settings in the HCP UI.** The next apply reverts them. Make the change here.
 - **New workspaces are created in the HCP UI and imported.** The team token can't create a GitHub App VCS connection, so creating a `tfe_workspace` fails on apply.
-- When adding a workspace, attach it to `deletion-guard` unless its applies are confirmed by hand, and add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in [github-settings](https://github.com/chorrell/github-settings) (`repos.yaml`).
+- When adding a workspace, attach it to `deletion-guard` unless its applies are confirmed by hand, and add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in `github-settings` (`repos.yaml`).
 - Run `terraform fmt -recursive`, `terraform validate` and `tflint` from the repo root, or `prek run --all-files`. Provider bumps need the lock file for both platforms: `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
 - Commits and PR titles use conventional commits (`feat(workspaces): ...`, `chore(deps): ...`). Branch from `main` with a `feature/` prefix. Keep PR bodies to a few bullets on intent.
