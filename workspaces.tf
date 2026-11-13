@@ -3,6 +3,10 @@ locals {
   # GitHub account set their own github_app_installation_id.
   github_app_installation_id = "ghain-auj1gVJBwevGsznW"
 
+  # The same app's installation on the horrell-consulting GitHub org. A literal, because the tfe_github_app_installation
+  # data source rejects team tokens. Read it from the hand-created workspace's VCS settings.
+  horrell_consulting_github_app_installation_id = "ghain-PLACEHOLDER"
+
   # Every workspace in the org except this one, which manages its own settings in self.tf.
   workspaces = {
     "github-settings" = {
@@ -17,7 +21,7 @@ locals {
       repo                       = "horrell-consulting/github-settings"
       working_directory          = ""
       terraform_version          = "~>1.16.0"
-      github_app_installation_id = data.tfe_github_app_installation.horrell_consulting.id
+      github_app_installation_id = local.horrell_consulting_github_app_installation_id
     }
     "horrell-ca" = {
       project             = "horrell_ca"
@@ -84,11 +88,6 @@ locals {
   # cloudflare-horrell has several roots, so each workspace only runs for changes in its own folder.
   # The single-root repos (github-settings, horrell.ca, tailscale-horrell) leave file triggers off and track the default branch.
   monorepo = "chorrell/cloudflare-horrell"
-}
-
-# HCP Terraform's GitHub App installation on the horrell-consulting GitHub org, looked up by account name.
-data "tfe_github_app_installation" "horrell_consulting" {
-  name = "horrell-consulting"
 }
 
 # Not managed: every org has a Default Project, and it can't be deleted. hcp-terraform and github-settings live in it.
