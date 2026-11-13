@@ -4,8 +4,8 @@ locals {
   github_app_installation_id = "ghain-auj1gVJBwevGsznW"
 
   # The same app's installation on the horrell-consulting GitHub org. A literal, because the tfe_github_app_installation
-  # data source rejects team tokens. Read it from the hand-created workspace's VCS settings.
-  horrell_consulting_github_app_installation_id = "ghain-PLACEHOLDER"
+  # data source rejects team tokens. Read from the hand-created workspace's VCS settings.
+  horrell_consulting_github_app_installation_id = "ghain-wVgTSYJ4qJMPc6EQ"
 
   # Every workspace in the org except this one, which manages its own settings in self.tf.
   workspaces = {
