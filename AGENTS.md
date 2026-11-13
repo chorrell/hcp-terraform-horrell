@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in the private repos `cloudflare-horrell`, `tailscale-horrell`, `horrell.ca` and `github-settings`. The Terraform lives at the repo root, and the `hcp-terraform` workspace plans on every commit. See [README.md](README.md) for the bootstrap order and workflow.
+Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in the private repos `cloudflare-horrell`, `tailscale-horrell`, `horrell.ca` and `github-settings`, and the public `horrell-consulting/github-settings`. The Terraform lives at the repo root, and the `hcp-terraform` workspace plans on every commit. See [README.md](README.md) for the bootstrap order and workflow.
 
 ## Structure
 
@@ -34,11 +34,11 @@ Terraform for the `horrell` HCP Terraform organization: org settings, projects, 
   - `auto_apply`, execution mode and remote state sharing belong to `tfe_workspace_settings`. Don't also set them on `tfe_workspace`.
   - Variable set attachments belong to `tfe_project_variable_set` / `tfe_workspace_variable_set`. Don't set `workspace_ids` on the variable set.
 - **The `deletion-guard` policy set is the only one the Free plan allows.** Attach workspaces with `tfe_workspace_policy_set` in `policies.tf`, not `workspace_ids` or `global`. It covers every auto-applying workspace, including `hcp-terraform` through `data.tfe_workspace.self`.
-  - `no-deletes` fails a delete or replace of a type in its `protected_types` list, and any delete at all on `github-settings`. Add a type there when a workspace gains a resource that a destroy would lose for good. Don't add DNS records or zone settings, because they're replaced routinely.
+  - `no-deletes` fails a delete or replace of a type in its `protected_types` list, and any delete at all on `github-settings` and `horrell-consulting-github-settings`. Add a type there when a workspace gains a resource that a destroy would lose for good. Don't add DNS records or zone settings, because they're replaced routinely.
   - Keep the policy's HCP name `no-deletes`, and check the plan's "to destroy" count if you change it.
   - `prevent_destroy` stops a plan before Sentinel runs, so the policy matters most when a resource's config block is removed.
 - **Don't change settings in the HCP UI.** The next apply reverts them. Make the change here.
 - **New workspaces are created in the HCP UI and imported.** The team token can't create a GitHub App VCS connection, so creating a `tfe_workspace` fails on apply.
-- When adding a workspace, attach it to `deletion-guard` unless its applies are confirmed by hand, and add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in `github-settings` (`repos.yaml`).
+- When adding a workspace, attach it to `deletion-guard` unless its applies are confirmed by hand, and add its `Terraform Cloud/horrell/<name>` check to the owning repo's required checks in `github-settings` (`repos.yaml`), or in `horrell-consulting/github-settings` for an org repo. A workspace whose repo is in another GitHub account sets its own `github_app_installation_id` literal; the `tfe_github_app_installation` data source rejects team tokens.
 - Run `terraform fmt -recursive`, `terraform validate` and `tflint` from the repo root, or `prek run --all-files`. Provider bumps need the lock file for both platforms: `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
 - Commits and PR titles use conventional commits (`feat(workspaces): ...`, `chore(deps): ...`). Branch from `main` with a `feature/` prefix. Keep PR bodies to a few bullets on intent.
