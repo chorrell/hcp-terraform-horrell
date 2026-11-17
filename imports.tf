@@ -10,3 +10,9 @@ import {
   to = tfe_workspace.this["horrell-consulting-github-settings"]
   id = "horrell/horrell-consulting-github-settings"
 }
+
+# Created by hand in the HCP UI for the same reason. Delete this block once it's applied.
+import {
+  to = tfe_workspace.this["doks-runners-cluster"]
+  id = "horrell/doks-runners-cluster"
+}
