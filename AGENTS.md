@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in the private repos `cloudflare-horrell`, `tailscale-horrell`, `horrell.ca` and `github-settings`, and the public `horrell-consulting/github-settings`. The Terraform lives at the repo root, and the `hcp-terraform` workspace plans on every commit. See [README.md](README.md) for the bootstrap order and workflow.
+Terraform for the `horrell` HCP Terraform organization: org settings, projects, workspaces, notifications and variable sets, via the `hashicorp/tfe` provider. It's the source of truth for workspace settings in the private repos `cloudflare-horrell`, `tailscale-horrell`, `horrell.ca` and `github-settings`, and the public `doks-runners` and `horrell-consulting/github-settings`. The Terraform lives at the repo root, and the `hcp-terraform` workspace plans on every commit. See [README.md](README.md) for the bootstrap order and workflow.
 
 ## Structure
 

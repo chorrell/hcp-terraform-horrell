@@ -4,7 +4,7 @@
 
 This repo is the source of truth for the `horrell` [HCP Terraform](https://app.terraform.io/app/horrell) organization. It covers the org settings, projects, each workspace's VCS connection and run settings, run notifications, and variable sets. The HCP workspace `hcp-terraform` manages them with the [`hashicorp/tfe`](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs) provider. Change these settings here, not in the HCP UI, because the next apply reverts UI edits.
 
-The workspaces hold state for four private repos: `cloudflare-horrell` (Cloudflare DNS, WAF, cache and R2 for horrell.ca and horrell.info), `tailscale-horrell` (the tailnet), `horrell.ca` (the DigitalOcean droplet that runs Ghost) and `github-settings` (repository settings and rulesets). A fifth, public repo, [horrell-consulting/github-settings](https://github.com/horrell-consulting/github-settings), does the same for the `horrell-consulting` GitHub org; its workspace connects through HCP's GitHub App installation on that org.
+The workspaces hold state for four private repos: `cloudflare-horrell` (Cloudflare DNS, WAF, cache and R2 for horrell.ca and horrell.info), `tailscale-horrell` (the tailnet), `horrell.ca` (the DigitalOcean droplet that runs Ghost) and `github-settings` (repository settings and rulesets). A fifth, public repo, [horrell-consulting/github-settings](https://github.com/horrell-consulting/github-settings), does the same for the `horrell-consulting` GitHub org; its workspace connects through HCP's GitHub App installation on that org. A sixth, public repo, [doks-runners](https://github.com/chorrell/doks-runners), holds the DigitalOcean Kubernetes cluster for self-hosted GitHub Actions runners.
 
 ## Deletion guard
 
@@ -22,7 +22,7 @@ The policy is soft-mandatory. An intended delete goes through when an org owner 
 | [`organization.tf`](organization.tf) | Org settings (commit statuses, speculative plan cancellation) and the `Horrell-ca` / `Horrell-info` projects. The Default Project is looked up, not managed |
 | [`workspaces.tf`](workspaces.tf) | The twelve workspaces: VCS repo, working directory, trigger prefixes, Terraform version, destroy plans off. Auto-apply and remote state go through `tfe_workspace_settings` |
 | [`notifications.tf`](notifications.tf) | Email alerts (applying, pending approval, errored) on every auto-applying workspace |
-| [`policies.tf`](policies.tf) | The `deletion-guard` Sentinel policy set and its `no-deletes` policy ([`policies/`](policies)), attached to every auto-applying workspace (all but `tailscale`) |
+| [`policies.tf`](policies.tf) | The `deletion-guard` Sentinel policy set and its `no-deletes` policy ([`policies/`](policies)), attached to every auto-applying workspace (all but `tailscale` and `doks-runners-cluster`) |
 | [`variable_sets.tf`](variable_sets.tf) | The four variable sets, their non-sensitive variables, and their project and workspace attachments |
 | [`workspace_variables.tf`](workspace_variables.tf) | Non-sensitive workspace variables (`alert_emails` on `horrell-ca`) |
 | [`variables.tf`](variables.tf) | `organization_email` and `alert_emails`, so no email address is in the code. Their values live on the `hcp-terraform` workspace |

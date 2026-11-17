@@ -9,6 +9,16 @@ locals {
 
   # Every workspace in the org except this one, which manages its own settings in self.tf.
   workspaces = {
+    # The DOKS cluster for self-hosted runners. doks-runners will get a second root (terraform/arc), so runs only
+    # trigger for changes in this one's folder.
+    "doks-runners-cluster" = {
+      project           = "default"
+      repo              = "chorrell/doks-runners"
+      working_directory = "terraform/cluster"
+      file_triggers     = true
+      # Applies are confirmed by hand: a mistake here can leave a $1/hour build node running.
+      auto_apply = false
+    }
     "github-settings" = {
       project           = "default"
       repo              = "chorrell/github-settings"
@@ -87,6 +97,7 @@ locals {
 
   # cloudflare-horrell has several roots, so each workspace only runs for changes in its own folder.
   # The single-root repos (github-settings, horrell.ca, tailscale-horrell) leave file triggers off and track the default branch.
+  # A workspace in another multi-root repo opts into file triggers with `file_triggers = true`.
   monorepo = "chorrell/cloudflare-horrell"
 }
 
@@ -106,8 +117,8 @@ resource "tfe_workspace" "this" {
 
   working_directory     = each.value.working_directory
   terraform_version     = lookup(each.value, "terraform_version", "~> 1.16.0")
-  file_triggers_enabled = each.value.repo == local.monorepo
-  trigger_prefixes      = each.value.repo == local.monorepo ? ["${each.value.working_directory}/"] : []
+  file_triggers_enabled = each.value.repo == local.monorepo || lookup(each.value, "file_triggers", false)
+  trigger_prefixes      = each.value.repo == local.monorepo || lookup(each.value, "file_triggers", false) ? ["${each.value.working_directory}/"] : []
 
   # Nobody can queue a whole-workspace destroy run, which auto-apply would apply without a confirm.
   # Enable it only to decommission a workspace.

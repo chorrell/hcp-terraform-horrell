@@ -1,8 +1,8 @@
 # Deletion guard for workspaces that auto-apply. The Free plan allows one policy set and one mandatory policy, so this
 # is the only set. Attach it with tfe_workspace_policy_set, not workspace_ids or global.
 # The policy guards a list of high-value resource types everywhere, and every resource on both github-settings workspaces. DNS records
-# aren't listed, because they're replaced as a matter of course. tailscale is left off, since its applies are confirmed
-# by hand.
+# aren't listed, because they're replaced as a matter of course. Workspaces with auto_apply = false (tailscale,
+# doks-runners-cluster) are left off, since their applies are confirmed by hand.
 
 resource "tfe_policy" "no_deletes" {
   name         = "no-deletes"
@@ -27,7 +27,7 @@ resource "tfe_policy_set" "deletion_guard" {
 
 resource "tfe_workspace_policy_set" "deletion_guard" {
   for_each = merge(
-    { for name, ws in tfe_workspace.this : name => ws.id if name != "tailscale" },
+    { for name, ws in tfe_workspace.this : name => ws.id if lookup(local.workspaces[name], "auto_apply", true) },
     # This workspace is read through a data source in self.tf, so it can't be in tfe_workspace.this.
     { "hcp-terraform" = data.tfe_workspace.self.id },
   )
