@@ -1,8 +1,8 @@
 # Deletion guard for workspaces that auto-apply. The Free plan allows one policy set and one mandatory policy, so this
 # is the only set. Attach it with tfe_workspace_policy_set, not workspace_ids or global.
 # The policy guards a list of high-value resource types everywhere, and every resource on both github-settings workspaces. DNS records
-# aren't listed, because they're replaced as a matter of course. Workspaces with auto_apply = false (tailscale,
-# doks-runners-cluster) are left off, since their applies are confirmed by hand.
+# aren't listed, because they're replaced as a matter of course. Workspaces with auto_apply = false (tailscale and the
+# two doks-runners workspaces) are left off, since their applies are confirmed by hand.
 
 resource "tfe_policy" "no_deletes" {
   name         = "no-deletes"

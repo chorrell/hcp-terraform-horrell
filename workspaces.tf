@@ -9,8 +9,16 @@ locals {
 
   # Every workspace in the org except this one, which manages its own settings in self.tf.
   workspaces = {
-    # The DOKS cluster for self-hosted runners. doks-runners will get a second root (terraform/arc), so runs only
-    # trigger for changes in this one's folder.
+    # doks-runners has two roots, the DOKS cluster and the ARC Helm releases on it, so each workspace's runs only
+    # trigger for changes in its own folder. Applies are confirmed by hand in both.
+    "doks-runners-arc" = {
+      project           = "default"
+      repo              = "chorrell/doks-runners"
+      working_directory = "terraform/arc"
+      file_triggers     = true
+      # A bad runner setting (minRunners above 0) would hold a build node up at its full hourly price.
+      auto_apply = false
+    }
     "doks-runners-cluster" = {
       project           = "default"
       repo              = "chorrell/doks-runners"
