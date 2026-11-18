@@ -12,18 +12,20 @@ locals {
     # doks-runners has two roots, the DOKS cluster and the ARC Helm releases on it, so each workspace's runs only
     # trigger for changes in its own folder. Applies are confirmed by hand in both.
     "doks-runners-arc" = {
-      project           = "default"
-      repo              = "chorrell/doks-runners"
-      working_directory = "terraform/arc"
-      file_triggers     = true
+      project                    = "default"
+      repo                       = "horrell-consulting/doks-runners"
+      working_directory          = "terraform/arc"
+      github_app_installation_id = local.horrell_consulting_github_app_installation_id
+      file_triggers              = true
       # A bad runner setting (minRunners above 0) would hold a build node up at its full hourly price.
       auto_apply = false
     }
     "doks-runners-cluster" = {
-      project           = "default"
-      repo              = "chorrell/doks-runners"
-      working_directory = "terraform/cluster"
-      file_triggers     = true
+      project                    = "default"
+      repo                       = "horrell-consulting/doks-runners"
+      working_directory          = "terraform/cluster"
+      github_app_installation_id = local.horrell_consulting_github_app_installation_id
+      file_triggers              = true
       # Applies are confirmed by hand: a mistake here can leave a $1/hour build node running.
       auto_apply = false
     }
